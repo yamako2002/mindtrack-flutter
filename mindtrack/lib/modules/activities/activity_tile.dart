@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../modules/activity.dart';
+import '../../services/firestore_service.dart';
 
 class ActivityTile extends StatelessWidget {
   final Activity activity;
@@ -13,38 +16,40 @@ class ActivityTile extends StatelessWidget {
     required this.onDelete,
   });
 
-  IconData _iconFor(String category) {
-    switch (category.toLowerCase()) {
-      case 'sport':
-        return Icons.fitness_center;
-      case 'relaxation':
-        return Icons.spa;
-      case 'lecture':
-        return Icons.book;
-      case 'sommeil':
-        return Icons.nightlight_round;
-      default:
-        return Icons.favorite;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final col = FS.colUserSub(FirebaseFirestore.instance.app.options.projectId, 'activities');
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: ListTile(
-        leading: Icon(_iconFor(activity.category),
-            color: Theme.of(context).colorScheme.primary),
-        title: Text(activity.name),
-        subtitle: Text('${activity.duration} min • ${activity.category}'),
-        trailing: PopupMenuButton<String>(
-          onSelected: (v) {
-            if (v == 'edit') onEdit();
-            if (v == 'delete') onDelete();
+        leading: Checkbox(
+          value: activity.done,
+          onChanged: (value) {
+            FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid ?? 'demo')
+                .collection('activities')
+                .doc(activity.id)
+                .update({'done': value});
           },
-          itemBuilder: (context) => const [
-            PopupMenuItem(value: 'edit', child: Text('Modifier')),
-            PopupMenuItem(value: 'delete', child: Text('Supprimer')),
+        ),
+        title: Text(
+          activity.done ? "✅ ${activity.name}" : activity.name,
+          style: TextStyle(
+            decoration: activity.done ? TextDecoration.lineThrough : null,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text("${activity.category} • ${activity.duration} min"),
+        trailing: PopupMenuButton(
+          onSelected: (value) {
+            if (value == 'edit') onEdit();
+            if (value == 'delete') onDelete();
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'edit', child: Text("Modifier")),
+            const PopupMenuItem(value: 'delete', child: Text("Supprimer")),
           ],
         ),
       ),

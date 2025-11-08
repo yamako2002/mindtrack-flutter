@@ -1,34 +1,44 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Activity {
   final String id;
   final String name;
-  final String category;
-  final int duration; // en minutes
-  final bool done;
   final String? note;
+  final String category;
+  final int duration;
+  final bool done;
+  final Timestamp createdAt;
 
   Activity({
     required this.id,
     required this.name,
+    this.note,
     required this.category,
     required this.duration,
-    required this.done,
-    this.note,
-  });
+    this.done = false,
+    Timestamp? createdAt,
+  }) : createdAt = createdAt ?? Timestamp.now();
 
-  Map<String, dynamic> toMap() => {
-    'name': name,
-    'category': category,
-    'duration': duration,
-    'done': done,
-    'note': note,
-  };
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'note': note,
+      'category': category,
+      'duration': duration,
+      'done': done,
+      'createdAt': createdAt,
+    };
+  }
 
-  static Activity fromDoc(String id, Map<String, dynamic> m) => Activity(
-    id: id,
-    name: m['name'] ?? '',
-    category: m['category'] ?? '',
-    duration: (m['duration'] ?? 0) as int,
-    done: (m['done'] ?? false) as bool,
-    note: m['note'],
-  );
+  factory Activity.fromDoc(String id, Map<String, dynamic> data) {
+    return Activity(
+      id: id,
+      name: data['name'] ?? '',
+      note: data['note'],
+      category: data['category'] ?? 'autre',
+      duration: data['duration'] ?? 0,
+      done: data['done'] ?? false,
+      createdAt: data['createdAt'] ?? Timestamp.now(), // ✅ FIX ICI
+    );
+  }
 }
